@@ -136,6 +136,8 @@ fn main() {
         ("2025", "11", "1") => y2025::day11::run_part_1(),
         ("2025", "11", "2") => y2025::day11::run_part_2(),
         ("2025", "11", "dot") => y2025::day11::dot::generate_dot_file(),
+        ("2025", "12", "1") => y2025::day12::run_part_1(),
+        ("2025", "12", "2") => y2025::day12::run_part_2(),
 
         _ => eprintln!("Invalid year, day, or part"),
     }

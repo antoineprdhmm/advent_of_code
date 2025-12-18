@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use crate::read_input;
 
 #[derive(Debug)]
 struct Region {
     width: usize,
     height: usize,
-    present_counts: HashMap<usize, usize>,
+    present_counts: Vec<usize>,
 }
 
 fn read_puzzle_input() -> Vec<Region> {
@@ -15,11 +13,11 @@ fn read_puzzle_input() -> Vec<Region> {
         .map_while(Result::ok)
         .collect();
 
-    lines[30..lines.len()]
+    lines[30..]
         .iter()
         .map(|line| {
             let (size, counts_str) = line.split_once(": ").unwrap();
-            let (width_str, height_str) = size.split_once("x").unwrap();
+            let (width_str, height_str) = size.split_once('x').unwrap();
             let (width, height) = (
                 width_str.parse::<usize>().unwrap(),
                 height_str.parse::<usize>().unwrap(),
@@ -28,7 +26,6 @@ fn read_puzzle_input() -> Vec<Region> {
             let present_counts = counts_str
                 .split_whitespace()
                 .map(|v| v.parse::<usize>().unwrap())
-                .enumerate()
                 .collect();
 
             Region {
@@ -42,8 +39,7 @@ fn read_puzzle_input() -> Vec<Region> {
 
 pub fn run_part_1() {
     // number of filled cells by shape
-    let areas: HashMap<usize, usize> =
-        HashMap::from([(0, 7), (1, 7), (2, 6), (3, 5), (4, 7), (5, 7)]);
+    const AREAS: [usize; 6] = [7, 7, 6, 5, 7, 7];
 
     let regions = read_puzzle_input();
 
@@ -58,7 +54,8 @@ pub fn run_part_1() {
             let total_needed: usize = r
                 .present_counts
                 .iter()
-                .map(|(i, a)| areas.get(&i).unwrap() * a)
+                .enumerate()
+                .map(|(i, a)| AREAS[i] * a)
                 .sum();
 
             total_needed <= available
@@ -72,7 +69,7 @@ pub fn run_part_1() {
         .iter()
         .filter(|r| {
             let available = r.height * r.width;
-            let total_needed: usize = r.present_counts.iter().map(|(i, a)| 9 * a).sum();
+            let total_needed: usize = r.present_counts.iter().map(|a| 9 * a).sum();
 
             total_needed <= available
         })

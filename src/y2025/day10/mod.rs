@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::read_input;
 
@@ -25,7 +25,7 @@ fn read_machines() -> Vec<Machine> {
                 .map(|button_str| {
                     button_str
                         .trim_matches(|c| c == '(' || c == ')')
-                        .split(",")
+                        .split(',')
                         .map(|v| v.parse::<usize>().unwrap())
                         .collect()
                 })
@@ -33,7 +33,7 @@ fn read_machines() -> Vec<Machine> {
 
             let joltages = parts[parts.len() - 1]
                 .trim_matches(|c| c == '{' || c == '}')
-                .split(",")
+                .split(',')
                 .map(|v| v.parse::<usize>().unwrap())
                 .collect();
 
@@ -46,11 +46,11 @@ fn read_machines() -> Vec<Machine> {
         .collect()
 }
 
-fn generate_all_combinations(
-    items: &Vec<u32>,
+fn generate_all_combinations<T: Clone>(
+    items: &[T],
     start: usize,
-    cur: &mut Vec<u32>,
-    out: &mut Vec<Vec<u32>>,
+    cur: &mut Vec<T>,
+    out: &mut Vec<Vec<T>>,
 ) {
     if !cur.is_empty() {
         out.push(cur.clone());
@@ -63,7 +63,7 @@ fn generate_all_combinations(
     }
 }
 
-fn indicator_lights_to_bits(indicator_lights: &Vec<char>) -> u32 {
+fn indicator_lights_to_bits(indicator_lights: &[char]) -> u32 {
     indicator_lights.iter().fold(0, |acc, c| {
         (acc << 1)
             | match c {
@@ -74,15 +74,12 @@ fn indicator_lights_to_bits(indicator_lights: &Vec<char>) -> u32 {
     })
 }
 
-fn button_to_bits(button: &Vec<usize>, indicator_lights_size: usize) -> u32 {
-    let mut bits = 0;
-    for i in 0..indicator_lights_size {
-        bits <<= 1;
-        if button.contains(&i) {
-            bits |= 1;
-        }
-    }
-    bits
+fn button_to_bits(button: &[usize], indicator_lights_size: usize) -> u32 {
+    let button_set: HashSet<_> = button.iter().collect();
+
+    (0..indicator_lights_size).fold(0, |bits, i| {
+        (bits << 1) | if button_set.contains(&i) { 1 } else { 0 }
+    })
 }
 
 fn find_fewest_presses_to_configure_indicator_light(machine: &Machine) -> usize {
@@ -117,7 +114,7 @@ fn find_fewest_presses_to_configure_indicator_light(machine: &Machine) -> usize 
         }
     }
 
-    return 0;
+    0
 }
 
 pub fn run_part_1() {
@@ -129,23 +126,6 @@ pub fn run_part_1() {
         .sum();
 
     assert_eq!(total_fewest_presses, 432);
-}
-
-fn generate_all_combinations_2(
-    items: &Vec<Vec<usize>>,
-    start: usize,
-    cur: &mut Vec<Vec<usize>>,
-    out: &mut Vec<Vec<Vec<usize>>>,
-) {
-    if !cur.is_empty() {
-        out.push(cur.clone());
-    }
-
-    for i in start..items.len() {
-        cur.push(items[i].clone());
-        generate_all_combinations_2(items, i + 1, cur, out);
-        cur.pop();
-    }
 }
 
 fn generate_pattern_costs(all_combinations: Vec<Vec<Vec<usize>>>) -> Vec<(Vec<usize>, usize)> {
@@ -185,7 +165,7 @@ fn find_fewest_presses_to_configure_joltages(
     }
 
     // If all 0, no more press needed -> return 0
-    if target.iter().all(|x| *x == 0) {
+    if target.iter().sum::<usize>() == 0 {
         return 0;
     }
 
@@ -229,16 +209,14 @@ pub fn run_part_2() {
             .buttons
             .iter()
             .map(|btn| {
-                let mut btn_mask = Vec::new();
-                for i in 0..machine.joltages.len() {
-                    btn_mask.push(if btn.contains(&i) { 1 } else { 0 });
-                }
-                btn_mask
+                (0..machine.joltages.len())
+                    .map(|i| if btn.contains(&i) { 1 } else { 0 })
+                    .collect()
             })
             .collect();
 
         let mut all_combinations = Vec::new();
-        generate_all_combinations_2(&button_masks, 0, &mut Vec::new(), &mut all_combinations);
+        generate_all_combinations(&button_masks, 0, &mut Vec::new(), &mut all_combinations);
 
         let mut pattern_costs = generate_pattern_costs(all_combinations);
         pattern_costs.push((vec![0; machine.joltages.len()], 0));

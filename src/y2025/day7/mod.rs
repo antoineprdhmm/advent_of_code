@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::read_input;
 
 fn read_beam_splitting() -> Vec<Vec<char>> {
@@ -96,6 +94,6 @@ pub fn run_part_2() {
         }
     }
 
-    let total: usize = paths_count.iter().last().unwrap().iter().sum();
+    let total: usize = paths_count.last().unwrap().iter().sum();
     assert_eq!(total, 40999072541589);
 }

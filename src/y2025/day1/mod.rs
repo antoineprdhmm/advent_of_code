@@ -8,7 +8,7 @@ enum Direction {
 
 struct Rotation {
     direction: Direction,
-    steps: isize,
+    steps: i32,
 }
 
 fn read_rotations() -> Vec<Rotation> {
@@ -18,12 +18,12 @@ fn read_rotations() -> Vec<Rotation> {
         .map(|line| {
             let (direction, steps) = line.split_at(1);
             Rotation {
-                direction: if direction == "L" {
-                    Direction::Left
-                } else {
-                    Direction::Right
+                direction: match direction {
+                    "L" => Direction::Left,
+                    "R" => Direction::Right,
+                    _ => panic!("Invalid direction: {direction}"),
                 },
-                steps: steps.parse::<isize>().unwrap(),
+                steps: steps.parse::<i32>().unwrap(),
             }
         })
         .collect()
@@ -35,12 +35,11 @@ pub fn run_part_1() {
     let mut count_0 = 0;
     let mut current_position = 50;
 
-    for rotation in rotations {
+    for rotation in &rotations {
         if rotation.direction == Direction::Left {
-            let new_pos = (current_position as i32 - rotation.steps as i32) % 100;
-            current_position = if new_pos < 0 { new_pos + 100 } else { new_pos };
+            current_position = (current_position - rotation.steps).rem_euclid(100);
         } else {
-            current_position = (current_position as i32 + rotation.steps as i32) % 100;
+            current_position = (current_position + rotation.steps) % 100;
         }
 
         if current_position == 0 {
@@ -57,18 +56,14 @@ pub fn run_part_2() {
     let mut count_0 = 0;
     let mut current_position = 50;
 
-    for rotation in rotations {
+    for rotation in &rotations {
         count_0 += rotation.steps / 100;
         let remaining_steps = rotation.steps % 100;
 
         match rotation.direction {
             Direction::Left => {
                 let new_position_raw = current_position - remaining_steps;
-                let new_position = if new_position_raw < 0 {
-                    new_position_raw + 100
-                } else {
-                    new_position_raw
-                };
+                let new_position = new_position_raw.rem_euclid(100);
 
                 if new_position_raw < 0 && current_position > 0 {
                     count_0 += 1;
@@ -81,11 +76,7 @@ pub fn run_part_2() {
             }
             Direction::Right => {
                 let new_position_raw = current_position + remaining_steps;
-                let new_position = if new_position_raw > 99 {
-                    new_position_raw - 100
-                } else {
-                    new_position_raw
-                };
+                let new_position = new_position_raw.rem_euclid(100);
 
                 if new_position_raw > 99 {
                     count_0 += 1;

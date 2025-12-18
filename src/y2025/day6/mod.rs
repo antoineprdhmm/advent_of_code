@@ -30,27 +30,19 @@ fn read_data_part_1() -> (Vec<Vec<usize>>, Vec<String>) {
 pub fn run_part_1() {
     let (numbers, operations) = read_data_part_1();
 
-    let mut total_sum = 0;
-
-    // For each operation
-    for i in 0..operations.len() {
-        // check operation kind
-        if operations[i] == "*" {
-            let mut r = 1;
-            for j in 0..numbers.len() {
-                // multiply all numbers on the operation col
-                r *= numbers[j][i];
+    let total_sum = operations
+        .iter()
+        .enumerate()
+        .map(|(i, operation)| {
+            // check operation kind
+            // then apply operation on column numbers
+            match operation.as_str() {
+                "*" => numbers.iter().map(|row| row[i]).product::<usize>(),
+                "+" => numbers.iter().map(|row| row[i]).sum::<usize>(),
+                op => panic!("Unknown operation: {op}"),
             }
-            total_sum += r;
-        } else {
-            let mut r = 0;
-            for j in 0..numbers.len() {
-                // sum all numbers on the operation col
-                r += numbers[j][i];
-            }
-            total_sum += r;
-        }
-    }
+        })
+        .sum::<usize>();
 
     assert_eq!(5873191732773, total_sum);
 }
@@ -65,23 +57,9 @@ fn read_data_part_2() -> (Vec<Vec<usize>>, Vec<String>) {
     // here we must keep the whitespaces around the values
     // let's find the columns with only whitespace -> used to separate the values of each operation
 
-    let mut separators_cols = Vec::new();
-
-    for i in 0..lines[0].len() {
-        let mut found_not_space = false;
-        let mut j = 0;
-        // keep looking in the col while we see whitespaces
-        while !found_not_space && j < lines.len() {
-            if lines[j][i] != ' ' {
-                // stop once a char that is not a whitespace has been found
-                found_not_space = true;
-            }
-            j += 1;
-        }
-        if !found_not_space {
-            separators_cols.push(i);
-        }
-    }
+    let separators_cols: Vec<usize> = (0..lines[0].len())
+        .filter(|&col| lines.iter().all(|line| line[col] == ' '))
+        .collect();
 
     // now, that we know the separator columns, we can split and get the values for each operation
 
@@ -106,7 +84,6 @@ fn read_data_part_2() -> (Vec<Vec<usize>>, Vec<String>) {
     // To get the operations -> same as part 1
 
     let operations: Vec<String> = splitted_lines
-        .iter()
         .last()
         .unwrap()
         .clone()
@@ -137,12 +114,18 @@ fn read_data_part_2() -> (Vec<Vec<usize>>, Vec<String>) {
         // All strings values for an operation have the same len (including the potential whitespaces around)
         let value_len = operation_values[0].len();
 
+        // Better perfs than nth()
+        let operation_values: Vec<Vec<char>> = operation_values
+            .iter()
+            .map(|s| s.chars().collect())
+            .collect();
+
         // each col is a potential number vertically
         for col_idx in 0..value_len {
             // we first build it as string
             let mut value_str = String::new();
-            for operation_value in &operation_values {
-                value_str.push(operation_value.chars().nth(col_idx).unwrap());
+            for chars in &operation_values {
+                value_str.push(chars[col_idx]);
             }
             // then trim whitespaces and convert to int
             values.push(value_str.trim().parse::<usize>().unwrap());
@@ -157,25 +140,19 @@ fn read_data_part_2() -> (Vec<Vec<usize>>, Vec<String>) {
 pub fn run_part_2() {
     let (numbers, operations) = read_data_part_2();
 
-    let mut total_sum = 0;
+    let total_sum: usize = operations
+        .iter()
+        .enumerate()
+        .map(|(i, operation)| {
+            let operation_numbers = &numbers[i];
 
-    for i in 0..operations.len() {
-        let operation_numbers = &numbers[i];
-
-        if operations[i] == "*" {
-            let mut r = 1;
-            for j in 0..operation_numbers.len() {
-                r *= operation_numbers[j];
+            match operation.as_str() {
+                "*" => operation_numbers.iter().product::<usize>(),
+                "+" => operation_numbers.iter().sum::<usize>(),
+                op => panic!("Unknown operation: {op}"),
             }
-            total_sum += r;
-        } else {
-            let mut r = 0;
-            for j in 0..operation_numbers.len() {
-                r += operation_numbers[j];
-            }
-            total_sum += r;
-        }
-    }
+        })
+        .sum();
 
     assert_eq!(total_sum, 11386445308378);
 }

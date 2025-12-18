@@ -13,60 +13,59 @@ fn read_banks() -> Vec<Vec<usize>> {
 }
 
 pub fn run_part_1() {
-    let banks = read_banks();
-    let mut joltage = 0;
+    let joltage: usize = read_banks()
+        .iter()
+        .map(|bank| {
+            let (mut a, mut b) = (bank[0], bank[1]);
 
-    for bank in banks {
-        let (mut a, mut b) = (bank[0], bank[1]);
-
-        for i in 2..bank.len() {
-            if b > a {
-                a = b;
-                b = bank[i];
-            } else {
-                if bank[i] > b {
+            for i in 2..bank.len() {
+                if b > a {
+                    a = b;
                     b = bank[i];
+                } else {
+                    if bank[i] > b {
+                        b = bank[i];
+                    }
                 }
             }
-        }
 
-        joltage += a * 10 + b;
-    }
+            a * 10 + b
+        })
+        .sum();
 
     assert_eq!(joltage, 16812);
 }
 
 pub fn run_part_2() {
-    let banks = read_banks();
-    let mut joltage = 0;
+    let joltage: usize = read_banks()
+        .iter()
+        .map(|bank| {
+            let mut biggest: Vec<usize> = bank.iter().take(12).copied().collect();
 
-    for bank in banks {
-        let mut biggest: Vec<usize> = bank.iter().take(12).cloned().collect();
-
-        for i in biggest.len()..bank.len() {
-            let mut shifted = false;
-            let last_index = biggest.len() - 1;
-            for j in 0..(last_index) {
-                if biggest[j] < biggest[j + 1] {
-                    // shift
-                    for k in j..(last_index) {
-                        biggest[k] = biggest[k + 1];
+            for i in biggest.len()..bank.len() {
+                let mut shifted = false;
+                let last_index = biggest.len() - 1;
+                for j in 0..(last_index) {
+                    if biggest[j] < biggest[j + 1] {
+                        // shift
+                        for k in j..(last_index) {
+                            biggest[k] = biggest[k + 1];
+                        }
+                        // put new discovered value at the end after the shift
+                        biggest[last_index] = bank[i];
+                        shifted = true;
+                        break;
                     }
-                    // put new discovered value at the end after the shift
+                }
+                // if not shifted, try to replace last value if it's bigger
+                if !shifted && bank[i] > biggest[last_index] {
                     biggest[last_index] = bank[i];
-                    shifted = true;
-                    break;
                 }
             }
-            // if not shifted, try to replace last value if it's bigger
-            if !shifted && bank[i] > biggest[last_index] {
-                biggest[last_index] = bank[i];
-            }
-        }
 
-        let joined_digits: Vec<String> = biggest.iter().map(|v| v.to_string()).collect();
-        joltage += joined_digits.join("").parse::<usize>().unwrap();
-    }
+            biggest.iter().fold(0, |acc, &d| acc * 10 + d)
+        })
+        .sum();
 
     assert_eq!(joltage, 166345822896410);
 }

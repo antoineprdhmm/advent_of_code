@@ -10,7 +10,7 @@ fn read_red_tiles_coordinates() -> Vec<Coordinate> {
         .map_while(Result::ok)
         .map(|line| {
             line.split_once(',')
-                .map(|(a, b)| ((a.parse::<isize>().unwrap(), (b.parse::<isize>().unwrap()))))
+                .map(|(a, b)| (a.parse::<isize>().unwrap(), (b.parse::<isize>().unwrap())))
                 .unwrap()
         })
         .collect()
@@ -33,20 +33,24 @@ pub fn run_part_1() {
     assert_eq!(max_area, 4755064176);
 }
 
-fn find_horizontal_green_borders_coordinates(coordinates: &Vec<Coordinate>) -> Vec<Coordinate> {
+fn find_horizontal_green_borders_coordinates(coordinates: &[Coordinate]) -> Vec<Coordinate> {
     let mut horizontal_coordinates: HashSet<Coordinate> = HashSet::new();
 
     for i in 0..coordinates.len() {
         for j in (i + 1)..coordinates.len() {
-            if coordinates[i].1 == coordinates[j].1 {
-                if coordinates[i].0 > coordinates[j].0 {
-                    for x in (coordinates[j].0 + 1)..coordinates[i].0 {
-                        horizontal_coordinates.insert((x, coordinates[j].1));
-                    }
-                } else {
-                    for x in (coordinates[i].0 + 1)..coordinates[j].0 {
-                        horizontal_coordinates.insert((x, coordinates[j].1));
-                    }
+            let (a, b) = (coordinates[i], coordinates[j]);
+
+            if a.1 != b.1 {
+                continue;
+            }
+
+            if a.0 > b.0 {
+                for x in (b.0 + 1)..a.0 {
+                    horizontal_coordinates.insert((x, coordinates[j].1));
+                }
+            } else {
+                for x in (a.0 + 1)..b.0 {
+                    horizontal_coordinates.insert((x, b.1));
                 }
             }
         }
@@ -95,11 +99,11 @@ pub fn run_part_2() {
         let candidate_area = width * height;
 
         if candidate_area > max_bottom_area {
-            // We found a bigger rectangle, let's make sure it's valid (fully contained in the circle, not crossing borders)
-            let mut is_valid = true;
-
             let horizontal_green_border_coordinates_opt =
                 horizontal_green_border_coordinates_by_x.get(&candidate.0);
+
+            // We found a bigger rectangle, let's make sure it's valid (fully contained in the circle, not crossing borders)
+            let mut is_valid = true;
             // Check if the left side of the rectangle cross some green borders
             if let Some(horizontal_green_border_coordinates) =
                 horizontal_green_border_coordinates_opt

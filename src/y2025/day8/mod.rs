@@ -2,13 +2,15 @@ use std::collections::HashSet;
 
 use crate::read_input;
 
+type Coordinate = (usize, usize, usize);
+
 fn read_boxes_coordinates() -> Vec<Coordinate> {
     read_input(2025, 8)
         .unwrap()
         .map_while(Result::ok)
         .map(|line| {
             let v: Vec<usize> = line
-                .split(",")
+                .split(',')
                 .map(|v| v.parse::<usize>().unwrap())
                 .collect();
             (v[0], v[1], v[2])
@@ -16,36 +18,32 @@ fn read_boxes_coordinates() -> Vec<Coordinate> {
         .collect()
 }
 
-type Coordinate = (usize, usize, usize);
-
 #[derive(Debug)]
 struct BoxPair {
     a: Coordinate,
     b: Coordinate,
-    distance: f64,
+    distance_squared: usize,
 }
 
-fn get_sorted_pairs(coordinates: Vec<(usize, usize, usize)>) -> Vec<BoxPair> {
+fn get_sorted_pairs(coordinates: &[Coordinate]) -> Vec<BoxPair> {
     let mut pairs = Vec::new();
 
     for i in 0..coordinates.len() {
         for j in (i + 1)..coordinates.len() {
-            let distance = (((coordinates[i].0 as isize - coordinates[j].0 as isize).pow(2)
-                + (coordinates[i].1 as isize - coordinates[j].1 as isize).pow(2)
-                + (coordinates[i].2 as isize - coordinates[j].2 as isize).pow(2))
-                as f64)
-                .sqrt();
+            let (a, b) = (coordinates[i], coordinates[j]);
+            let distance_squared = (a.0 as isize - b.0 as isize).pow(2) as usize
+                + (a.1 as isize - b.1 as isize).pow(2) as usize
+                + (a.2 as isize - b.2 as isize).pow(2) as usize;
 
             pairs.push(BoxPair {
-                a: coordinates[i],
-                b: coordinates[j],
-                distance,
+                a,
+                b,
+                distance_squared,
             })
         }
     }
 
-    pairs.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
-
+    pairs.sort_unstable_by_key(|p| p.distance_squared);
     pairs
 }
 
@@ -57,48 +55,34 @@ fn handle_pair(
     connected_box.insert(pair.a);
     connected_box.insert(pair.b);
 
-    let a_circuit = &circuits.iter().position(|x| x.contains(&pair.a));
-    let b_circuit = &circuits.iter().position(|x| x.contains(&pair.b));
+    let a_idx = circuits.iter().position(|x| x.contains(&pair.a));
+    let b_idx = circuits.iter().position(|x| x.contains(&pair.b));
 
-    if let Some(a) = a_circuit {
-        if let Some(b) = b_circuit {
-            // Both are in a set already
-            if a == b {
-                // Already connected together, nothing to do
-                return;
-            } else {
-                // Not connected -> let's merge the sets
-                let values = circuits[*b].clone();
-                circuits[*a].extend(values);
-                circuits.swap_remove(*b);
-                return;
-            }
+    match (a_idx, b_idx) {
+        (Some(a), Some(b)) if a == b => {
+            // Already in same circuit
         }
-    }
-
-    if a_circuit.is_none() && b_circuit.is_none() {
-        // none are in a circuit, let's create a new circuit
-        circuits.push(HashSet::from_iter(vec![pair.a, pair.b]));
-        return;
-    }
-
-    // only one set, add the other to the circuit
-    if a_circuit.is_none() {
-        if let Some(b) = b_circuit {
-            circuits[*b].insert(pair.a);
-            return;
+        (Some(a), Some(b)) => {
+            // Merge circuits
+            let values: Vec<_> = circuits[b].drain().collect();
+            circuits[a].extend(values);
+            circuits.swap_remove(b);
         }
-    } else {
-        if let Some(a) = a_circuit {
-            circuits[*a].insert(pair.b);
-            return;
+        (Some(a), None) => {
+            circuits[a].insert(pair.b);
+        }
+        (None, Some(b)) => {
+            circuits[b].insert(pair.a);
+        }
+        (None, None) => {
+            circuits.push(HashSet::from([pair.a, pair.b]));
         }
     }
 }
 
 pub fn run_part_1() {
     let coordinates = read_boxes_coordinates();
-    let pairs = get_sorted_pairs(coordinates);
+    let pairs = get_sorted_pairs(&coordinates);
 
     let mut circuits: Vec<HashSet<Coordinate>> = Vec::new();
     let mut connected_box: HashSet<Coordinate> = HashSet::new();
@@ -113,8 +97,7 @@ pub fn run_part_1() {
         .filter(|c| !c.is_empty())
         .map(|c| c.len())
         .collect::<Vec<usize>>();
-    sizes.sort();
-    sizes.reverse();
+    sizes.sort_unstable_by(|a, b| b.cmp(a));
 
     assert_eq!(105952, sizes[0] * sizes[1] * sizes[2]);
 }
@@ -122,7 +105,7 @@ pub fn run_part_1() {
 pub fn run_part_2() {
     let coordinates = read_boxes_coordinates();
     let nb_boxes = coordinates.len();
-    let pairs: Vec<BoxPair> = get_sorted_pairs(coordinates);
+    let pairs: Vec<BoxPair> = get_sorted_pairs(&coordinates);
 
     let mut circuits: Vec<HashSet<Coordinate>> = Vec::new();
     let mut connected_box: HashSet<Coordinate> = HashSet::new();
